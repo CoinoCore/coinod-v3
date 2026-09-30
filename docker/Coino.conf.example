@@ -1,0 +1,26 @@
+# Coino.conf — пример. Скопируйте в data/Coino.conf и отредактируйте.
+rpcuser=CHANGE_ME
+rpcpassword=CHANGE_ME_LONG_RANDOM_STRING
+rpcallowip=127.0.0.1
+rpcport=29299
+port=29293
+listen=1
+server=1
+daemon=0
+testnet=0
+maxconnections=50
+txindex=1
+
+# Seed-ноды Coino
+addnode=8.208.114.234
+addnode=47.252.18.1
+addnode=194.37.81.113
+addnode=5.180.181.33
+addnode=151.241.100.16
+addnode=47.251.106.110
+addnode=85.244.122.225
+addnode=91.206.16.214
+addnode=85.24.249.18
+addnode=198.44.142.249
+addnode=31.56.39.124
+addnode=207.244.199.188

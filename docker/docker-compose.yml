@@ -1,0 +1,16 @@
+services:
+  coinod:
+    build: .
+    image: coinod-v3:3.0.1
+    container_name: coinod-v3
+    restart: unless-stopped
+    shm_size: 512m
+    ports:
+      - "29393:29293"   # P2P
+      - "29399:29299"   # RPC
+    volumes:
+      - ./data:/home/ubuntu/.coino
+    command:
+      - -datadir=/home/ubuntu/.coino
+      - -printtoconsole
+      - -daemon=0
