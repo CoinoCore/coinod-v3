@@ -24,3 +24,10 @@ data/
 ._*
 *.pem
 *.key
+
+# Built binaries (not committed — attached to GitHub Releases)
+src/Coinod
+src/Coinod-*
+*.o
+*.d
+obj/

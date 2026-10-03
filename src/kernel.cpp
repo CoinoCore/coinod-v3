@@ -476,8 +476,49 @@ bool CheckProofOfStake(const CTransaction& tx, unsigned int nBits, uint256& hash
     CTxDB txdb("r");
     CTransaction txPrev;
     CTxIndex txindex;
-    if (!txPrev.ReadFromDisk(txdb, txin.prevout, txindex))
-        return tx.DoS(1, error("CheckProofOfStake() : INFO: read txPrev failed"));  // previous transaction not in main chain, may occur during initial download
+    CBlock blockPrev;
+    bool fBlockPrevLoaded = false;
+
+    bool fTxPrevFound = txPrev.ReadFromDisk(txdb, txin.prevout, txindex);
+
+    // === FIX v3.0.2: fallback read txPrev failed ===
+    if (!fTxPrevFound) {
+        uint256 hashBlock = 0;
+        if (!GetTransaction(txin.prevout.hash, txPrev, hashBlock)) {
+            return false;
+        }
+
+        if (!mapBlockIndex.count(hashBlock)) {
+            return false;
+        }
+        CBlockIndex* pindexPrev = mapBlockIndex[hashBlock];
+
+        txindex.pos.nFile = pindexPrev->nFile;
+        txindex.pos.nBlockPos = pindexPrev->nBlockPos;
+        txindex.pos.nTxPos = 0;
+
+        if (!blockPrev.ReadFromDisk(pindexPrev, true)) {
+            return fDebug ? error("CheckProofOfStake() : fallback block read failed") : false;
+        }
+        fBlockPrevLoaded = true;
+
+        unsigned int nTxPos = pindexPrev->nBlockPos +
+            ::GetSerializeSize(CBlock(), SER_DISK, CLIENT_VERSION) -
+            (2 * GetSizeOfCompactSize(0)) +
+            GetSizeOfCompactSize(blockPrev.vtx.size());
+        bool fTxPosFound = false;
+        for (size_t i = 0; i < blockPrev.vtx.size(); i++) {
+            if (blockPrev.vtx[i].GetHash() == txin.prevout.hash) {
+                txindex.pos.nTxPos = nTxPos;
+                fTxPosFound = true;
+                break;
+            }
+            nTxPos += ::GetSerializeSize(blockPrev.vtx[i], SER_DISK, CLIENT_VERSION);
+        }
+        if (!fTxPosFound) {
+            return false;
+        }
+    }
 
 #ifndef USE_LEVELDB
     txdb.Close();
@@ -487,10 +528,14 @@ bool CheckProofOfStake(const CTransaction& tx, unsigned int nBits, uint256& hash
     if (!VerifySignature(txPrev, tx, 0, MANDATORY_SCRIPT_VERIFY_FLAGS, 0))
         return tx.DoS(100, error("CheckProofOfStake() : VerifySignature failed on coinstake %s", tx.GetHash().ToString().c_str()));
 
-    // Read block header
+    // Read block header (или использовать blockPrev)
     CBlock block;
-    if (!block.ReadFromDisk(txindex.pos.nFile, txindex.pos.nBlockPos, false))
-        return fDebug? error("CheckProofOfStake() : read block failed") : false; // unable to read block of previous transaction
+    if (fBlockPrevLoaded) {
+        block = blockPrev;
+    } else {
+        if (!block.ReadFromDisk(txindex.pos.nFile, txindex.pos.nBlockPos, false))
+            return fDebug? error("CheckProofOfStake() : read block failed") : false;
+    }
 
     if (!CheckStakeKernelHash(nBits, block, txindex.pos.nTxPos - txindex.pos.nBlockPos, txPrev, txin.prevout, tx.nTime, hashProofOfStake, targetProofOfStake, fDebug))
         return tx.DoS(1, error("CheckProofOfStake() : INFO: check kernel failed on coinstake %s, hashProof=%s", tx.GetHash().ToString().c_str(), hashProofOfStake.ToString().c_str())); // may occur during initial download or if behind on block chain sync
