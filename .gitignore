@@ -31,3 +31,7 @@ src/Coinod-*
 *.o
 *.d
 obj/
+nBlockPos
+nFile
+*.bak*
+*.orig
