@@ -5,6 +5,7 @@
 #include <map>
 
 #include "key.h"
+#include <openssl/rand.h>
 
 using namespace std;
 
@@ -21,8 +22,8 @@ void ECC_Start()
 
     // Рандомизация контекста (защита от side-channel)
     unsigned char seed[32];
-    for (int i = 0; i < 32; i++)
-        seed[i] = (unsigned char)(rand() & 0xFF);
+    if (RAND_bytes(seed, sizeof(seed)) != 1)
+        throw std::runtime_error("RAND_bytes failed");
 
     if (secp256k1_context_randomize(ctx, seed) == 0) {
         secp256k1_context_destroy(ctx);
@@ -286,13 +287,12 @@ void CKey::MakeNewKey(bool fCompressed)
 {
     unsigned char buf[32];
     do {
-        for (int i = 0; i < 32; i++)
-            buf[i] = (unsigned char)(rand() & 0xFF);
+        if (RAND_bytes(buf, sizeof(buf)) != 1)
+            throw std::runtime_error("RAND_bytes failed in MakeNewKey");
     } while (!secp256k1_ec_seckey_verify(secp256k1_context_sign, buf));
 
     vch.assign(buf, buf + 32);
     fValid = true;
-    fCompressed = false;
     if (fCompressed)
         SetCompressedPubKey();
 
@@ -469,24 +469,29 @@ bool CKey::SetCompactSignature(uint256 hash, const std::vector<unsigned char>& v
     if (nV < 27 || nV >= 35)
         return false;
 
+    int recid = (nV - 27) & 3;
+    bool fCompressedSig = (nV >= 31);
+
     secp256k1_ecdsa_recoverable_signature sig;
     if (!secp256k1_ecdsa_recoverable_signature_parse_compact(
-            secp256k1_context_sign, &sig, &vchSig[1], nV - 27))
+            secp256k1_context_sign, &sig, &vchSig[1], recid))
         return false;
 
     secp256k1_pubkey pubkey_raw;
     if (!secp256k1_ecdsa_recover(secp256k1_context_sign, &pubkey_raw, &sig, hash.begin()))
         return false;
 
-    // Reset state
-    vch.clear();
-    fValid = true;
-    fCompressed = (nV >= 31);
-
     unsigned char pubkey_buf[65];
     size_t pubkey_len = 65;
-    secp256k1_ec_pubkey_serialize(secp256k1_context_sign, pubkey_buf, &pubkey_len, &pubkey_raw,
-        fCompressed ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED);
+    if (!secp256k1_ec_pubkey_serialize(secp256k1_context_sign, pubkey_buf,
+            &pubkey_len, &pubkey_raw,
+            fCompressedSig ? SECP256K1_EC_COMPRESSED : SECP256K1_EC_UNCOMPRESSED))
+        return false;
+
+    // Reset state — только после успешной сериализации
+    vch.clear();
+    fValid = true;
+    fCompressed = fCompressedSig;
     pubkey = CPubKey(std::vector<unsigned char>(pubkey_buf, pubkey_buf + pubkey_len));
 
     return true;
