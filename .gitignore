@@ -35,3 +35,12 @@ nBlockPos
 nFile
 *.bak*
 *.orig
+
+# Build artifacts (v3.0.3)
+src/Coinod.exe
+src/Coinod
+src/obj/
+releases/**/*.exe
+releases/**/*.zip
+releases/**/*.tar.gz
+releases/

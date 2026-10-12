@@ -1,0 +1,92 @@
+# CoinoCore V3 — Windows cross-compile via MXE
+# Host: Linux x86_64 | Target: Windows x86_64
+
+CC      = /mnt/data/mxe/usr/bin/x86_64-w64-mingw32.static-gcc
+CXX     = /mnt/data/mxe/usr/bin/x86_64-w64-mingw32.static-g++
+AR      = /mnt/data/mxe/usr/bin/x86_64-w64-mingw32.static-ar
+RANLIB  = /mnt/data/mxe/usr/bin/x86_64-w64-mingw32.static-ranlib
+STRIP   = /mnt/data/mxe/usr/bin/x86_64-w64-mingw32.static-strip
+
+MXE_DIR = /mnt/data/mxe/usr/x86_64-w64-mingw32.static
+MXE_INC = $(MXE_DIR)/include
+MXE_LIB = $(MXE_DIR)/lib
+
+USE_LEVELDB := 0
+USE_IPV6    := 1
+USE_SSE2    := 1
+
+INCLUDEPATHS = \
+ -I"$(CURDIR)" \
+ -I"$(CURDIR)/obj" \
+ -I"$(MXE_INC)" \
+ -I"$(CURDIR)/secp256k1/include"
+
+LIBPATHS = \
+ -L"$(MXE_LIB)" \
+ -L"$(CURDIR)/secp256k1/.libs"
+
+LIBS = \
+ -lboost_filesystem-mt-x64 \
+ -lboost_program_options-mt-x64 \
+ -lboost_thread-mt-x64 \
+ -lboost_chrono-mt-x64 \
+ -ldb_cxx \
+ -lssl \
+ -lcrypto \
+ -lsecp256k1 \
+ -lz \
+ -lcrypt32 \
+ -lshlwapi -lws2_32 -lmswsock -liphlpapi \
+ -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinspool -lwinmm \
+ -lshell32 -lcomctl32 -lole32 -loleaut32 -luuid -lrpcrt4 -ladvapi32
+
+xOPT_LEVEL = -O2
+
+DEFS = -D_MT -DWIN32 -D_WINDOWS -DBOOST_THREAD_USE_LIB \
+       -DBOOST_SPIRIT_THREADSAFE -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
+
+ifneq (${USE_IPV6}, -)
+	DEFS += -DUSE_IPV6=$(USE_IPV6)
+endif
+
+CFLAGS  = $(xOPT_LEVEL) -msse2 -mssse3 -w -Wall -Wextra \
+          -Wno-ignored-qualifiers -Wformat -Wformat-security \
+          -Wno-unused-parameter $(DEFS) $(INCLUDEPATHS)
+
+LDFLAGS = -Wl,--dynamicbase -Wl,--nxcompat -static-libgcc -static-libstdc++
+
+HEADERS = $(wildcard *.h)
+
+OBJS = \
+    obj/groestl.o obj/blake.o obj/bmw.o obj/skein.o obj/keccak.o \
+    obj/shavite.o obj/jh.o obj/luffa.o obj/cubehash.o obj/echo.o \
+    obj/simd.o obj/alert.o obj/version.o obj/checkpoints.o obj/netbase.o \
+    obj/addrman.o obj/crypter.o obj/base58.o obj/key.o obj/db.o \
+    obj/init.o obj/irc.o obj/keystore.o obj/main.o obj/miner.o obj/net.o \
+    obj/ntp.o obj/stun.o obj/protocol.o obj/bitcoinrpc.o obj/rpcdump.o \
+    obj/rpcnet.o obj/rpcmining.o obj/rpcwallet.o obj/rpcblockchain.o \
+    obj/rpcrawtransaction.o obj/script.o obj/sync.o obj/util.o obj/wallet.o \
+    obj/walletdb.o obj/noui.o obj/kernel.o obj/kernel_worker.o obj/txdb-bdb.o
+
+all: Coinod.exe
+
+obj/%.o: %.cpp $(HEADERS)
+	$(CXX) -c $(CFLAGS) -o $@ $<
+
+obj/%.o: %.c $(HEADERS)
+	$(CXX) -c $(CFLAGS) -fpermissive -x c++ -o $@ $<
+
+Coinod.exe: $(OBJS)
+	$(CXX) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJS) $(LIBPATHS) $(LIBS)
+	$(STRIP) Coinod.exe
+
+clean:
+	-rm -f Coinod.exe
+	-rm -f obj/*.o obj/*.d obj/*.P
+	-rm -f crypto/scrypt/asm/obj/*.o
+	-rm -f crypto/scrypt/intrin/obj/*.o
+	-rm -f crypto/scrypt/generic/obj/*.o
+	-rm -f crypto/sha2/asm/obj/*.o
+	-rm -f obj/build.h
+
+FORCE:
