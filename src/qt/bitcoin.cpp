@@ -1,6 +1,7 @@
 /*
  * W.J. van der Laan 2011-2012
  */
+#include "coino_theme.h"
 #include "bitcoingui.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
@@ -36,6 +37,8 @@ Q_IMPORT_PLUGIN(qtaccessiblewidgets)
 #endif
 
 // Need a global reference for the notifications to find the GUI
+
+
 static BitcoinGUI *guiref;
 static QSplashScreen *splashref;
 
@@ -159,6 +162,7 @@ int main(int argc, char *argv[])
 #endif
     Q_INIT_RESOURCE(bitcoin);
     QApplication app(argc, argv);
+    applyCoinoDarkTheme(app);
 
     // Application identification (must be set before OptionsModel is initialized,
     // as it is used to locate QSettings)
@@ -227,7 +231,6 @@ int main(int argc, char *argv[])
         // Regenerate startup link, to fix links to old versions
         if (GUIUtil::GetStartOnSystemStartup())
             GUIUtil::SetStartOnSystemStartup(true);
-
         BitcoinGUI window;
         guiref = &window;
         if(AppInit2())
@@ -235,17 +238,13 @@ int main(int argc, char *argv[])
             {
                 // Put this in a block, so that the Model objects are cleaned up before
                 // calling Shutdown().
-
-                if (splashref)
-                    splash.finish(&window);
-
                 ClientModel clientModel(&optionsModel);
                 WalletModel walletModel(pwalletMain, &optionsModel);
-
                 window.setClientModel(&clientModel);
                 window.setWalletModel(&walletModel);
 
-                // If -min option passed, start window minimized.
+                // v3.0.4 fix: show window BEFORE finish(splash) — иначе под Wine
+                // splash висит, а окно не появляется.
                 if(GetBoolArg("-min"))
                 {
                     window.showMinimized();
@@ -255,9 +254,12 @@ int main(int argc, char *argv[])
                     window.show();
                 }
 
+                // Теперь splash можно закрыть
+                if (splashref)
+                    splash.finish(&window);
+
                 // Place this here as guiref has to be defined if we don't want to lose URIs
                 ipcInit(argc, argv);
-
                 app.exec();
 
                 window.hide();

@@ -1,0 +1,212 @@
+# ============================================================
+# Coino-Qt — Qt GUI wallet for CoinoCore V3
+# Build with MXE (x86_64-w64-mingw32.static)
+# Usage:
+#   cd build-qt-win
+#   /mnt/data/mxe/usr/bin/x86_64-w64-mingw32.static-qmake-qt5 ../coino-qt.pro.mxe
+#   make -j2
+# ============================================================
+
+TEMPLATE = app
+TARGET   = Coino-Qt
+VERSION  = 3.0.4
+
+# --- Qt modules ---
+QT += core gui widgets network
+
+# --- C++17 ---
+CONFIG += c++17 warn_on release
+CONFIG -= debug_and_release debug
+
+# --- Static linking for Windows ---
+win32 {
+    QMAKE_LFLAGS += -static -static-libgcc -static-libstdc++ -Wl,-Bstatic
+    QMAKE_LFLAGS += -Wl,--enable-auto-import
+}
+
+# --- MXE paths ---
+MXE_PREFIX = /mnt/data/mxe/usr/x86_64-w64-mingw32.static
+REPO_ROOT  = $$PWD
+SRC_DIR    = $$REPO_ROOT/src
+QT_DIR     = $$SRC_DIR/qt
+
+# --- Defines ---
+DEFINES += \
+    HAVE_CONFIG_H \
+    SECP256K1_STATIC \
+    WIN32 \
+    _WIN32 \
+    _WINDOWS \
+    QT_GUI \
+    ENABLE_WALLET \
+    BOOST_SPIRIT_THREADSAFE \
+    BOOST_THREAD_USE_LIB \
+    BOOST_THREAD_PROVIDES_GENERIC_SHARED_MUTEX_ON_WIN \
+    HAVE_WORKING_BOOST_SLEEP_FOR \
+    BOOST_ALL_NO_LIB
+
+# --- Include paths ---
+INCLUDEPATH += \
+    $$QT_DIR \
+    $$QT_DIR/forms \
+    $$SRC_DIR \
+    $$SRC_DIR/config \
+    $$SRC_DIR/qt/forms \
+    $$SRC_DIR/secp256k1/include \
+    $$MXE_PREFIX/include \
+    $$MXE_PREFIX/include/QtCore \
+    $$MXE_PREFIX/include/QtGui \
+    $$MXE_PREFIX/include/QtWidgets \
+    $$MXE_PREFIX/include/QtNetwork
+
+# --- Libraries ---
+LIBS += \
+    -L$$MXE_PREFIX/lib \
+    -L$$SRC_DIR/secp256k1/.libs \
+    -L$$SRC_DIR \
+    -lcoinod_common \
+    -lsecp256k1 \
+    -lboost_filesystem-mt-x64 \
+    -lboost_program_options-mt-x64 \
+    -lboost_thread-mt-x64 \
+    -lboost_chrono-mt-x64 \
+    -ldb_cxx \
+    -lssl \
+    -lcrypto \
+    -lz \
+    -lcrypt32 \
+    -lshlwapi -lws2_32 -lmswsock -liphlpapi \
+    -lkernel32 -luser32 -lgdi32 -lcomdlg32 -lwinspool -lwinmm \
+    -lshell32 -lcomctl32 -lole32 -loleaut32 -luuid -lrpcrt4 -ladvapi32
+
+# --- Static Qt plugins (embedded into .exe) ---
+QTPLUGIN += qwindows qjpeg qgif qico qsvg qgif
+
+# --- Sources ---
+SOURCES += \
+    $$QT_DIR/aboutdialog.cpp \
+    $$QT_DIR/addressbookpage.cpp \
+    $$QT_DIR/addresstablemodel.cpp \
+    $$QT_DIR/askpassphrasedialog.cpp \
+    $$QT_DIR/bitcoin.cpp \
+    $$QT_DIR/bitcoinaddressvalidator.cpp \
+    $$QT_DIR/bitcoinamountfield.cpp \
+    $$QT_DIR/bitcoingui.cpp \
+    $$QT_DIR/bitcoinstrings.cpp \
+    $$QT_DIR/bitcoinunits.cpp \
+    $$QT_DIR/clientmodel.cpp \
+    $$QT_DIR/coincontroldialog.cpp \
+    $$QT_DIR/coincontroltreewidget.cpp \
+    $$QT_DIR/csvmodelwriter.cpp \
+    $$QT_DIR/editaddressdialog.cpp \
+    $$QT_DIR/guiutil.cpp \
+    $$QT_DIR/intro.cpp \
+    $$QT_DIR/mintingfilterproxy.cpp \
+    $$QT_DIR/mintingtablemodel.cpp \
+    $$QT_DIR/mintingview.cpp \
+    $$QT_DIR/monitoreddatamapper.cpp \
+    $$QT_DIR/multisigaddressentry.cpp \
+    $$QT_DIR/multisigdialog.cpp \
+    $$QT_DIR/multisiginputentry.cpp \
+    $$QT_DIR/notificator.cpp \
+    $$QT_DIR/optionsdialog.cpp \
+    $$QT_DIR/optionsmodel.cpp \
+    $$QT_DIR/overviewpage.cpp \
+    $$QT_DIR/qtipcserver.cpp \
+    $$QT_DIR/qvalidatedlineedit.cpp \
+    $$QT_DIR/qvaluecombobox.cpp \
+    $$QT_DIR/rpcconsole.cpp \
+    $$QT_DIR/secondauthdialog.cpp \
+    $$QT_DIR/sendcoinsdialog.cpp \
+    $$QT_DIR/sendcoinsentry.cpp \
+    $$QT_DIR/signverifymessagedialog.cpp \
+    $$QT_DIR/trafficgraphwidget.cpp \
+    $$QT_DIR/transactiondesc.cpp \
+    $$QT_DIR/transactiondescdialog.cpp \
+    $$QT_DIR/transactionfilterproxy.cpp \
+    $$QT_DIR/transactionrecord.cpp \
+    $$QT_DIR/transactiontablemodel.cpp \
+    $$QT_DIR/transactionview.cpp \
+    $$QT_DIR/walletmodel.cpp \
+    $$SRC_DIR/kernelrecord.cpp \
+    $$QT_DIR/coino_theme.cpp
+
+# --- Headers (moc) ---
+HEADERS += \
+    $$QT_DIR/aboutdialog.h \
+    $$QT_DIR/addressbookpage.h \
+    $$QT_DIR/addresstablemodel.h \
+    $$QT_DIR/askpassphrasedialog.h \
+    $$QT_DIR/bitcoinaddressvalidator.h \
+    $$QT_DIR/bitcoinamountfield.h \
+    $$QT_DIR/bitcoingui.h \
+    $$QT_DIR/bitcoinunits.h \
+    $$QT_DIR/clientmodel.h \
+    $$QT_DIR/coincontroldialog.h \
+    $$QT_DIR/coincontroltreewidget.h \
+    $$QT_DIR/csvmodelwriter.h \
+    $$QT_DIR/dialogwindowflags.h \
+    $$QT_DIR/editaddressdialog.h \
+    $$QT_DIR/guiutil.h \
+    $$QT_DIR/intro.h \
+    $$QT_DIR/mintingfilterproxy.h \
+    $$QT_DIR/mintingtablemodel.h \
+    $$QT_DIR/mintingview.h \
+    $$QT_DIR/monitoreddatamapper.h \
+    $$QT_DIR/multisigaddressentry.h \
+    $$QT_DIR/multisigdialog.h \
+    $$QT_DIR/multisiginputentry.h \
+    $$QT_DIR/notificator.h \
+    $$QT_DIR/optionsdialog.h \
+    $$QT_DIR/optionsmodel.h \
+    $$QT_DIR/overviewpage.h \
+    $$QT_DIR/qtipcserver.h \
+    $$QT_DIR/qvalidatedlineedit.h \
+    $$QT_DIR/qvaluecombobox.h \
+    $$QT_DIR/rpcconsole.h \
+    $$QT_DIR/secondauthdialog.h \
+    $$QT_DIR/sendcoinsdialog.h \
+    $$QT_DIR/sendcoinsentry.h \
+    $$QT_DIR/signverifymessagedialog.h \
+    $$QT_DIR/trafficgraphwidget.h \
+    $$QT_DIR/transactiondesc.h \
+    $$QT_DIR/transactiondescdialog.h \
+    $$QT_DIR/transactionfilterproxy.h \
+    $$QT_DIR/transactionrecord.h \
+    $$QT_DIR/transactiontablemodel.h \
+    $$QT_DIR/transactionview.h \
+    $$QT_DIR/walletmodel.h \
+    $$SRC_DIR/kernelrecord.h \
+    $$QT_DIR/coino_theme.h
+
+# --- UI forms ---
+FORMS += \
+    $$QT_DIR/forms/aboutdialog.ui \
+    $$QT_DIR/forms/addressbookpage.ui \
+    $$QT_DIR/forms/askpassphrasedialog.ui \
+    $$QT_DIR/forms/coincontroldialog.ui \
+    $$QT_DIR/forms/editaddressdialog.ui \
+    $$QT_DIR/forms/intro.ui \
+    $$QT_DIR/forms/multisigdialog.ui \
+    $$QT_DIR/forms/multisigaddressentry.ui \
+    $$QT_DIR/forms/multisiginputentry.ui \
+    $$QT_DIR/forms/optionsdialog.ui \
+    $$QT_DIR/forms/overviewpage.ui \
+    $$QT_DIR/forms/rpcconsole.ui \
+    $$QT_DIR/forms/sendcoinsdialog.ui \
+    $$QT_DIR/forms/sendcoinsentry.ui \
+    $$QT_DIR/forms/signverifymessagedialog.ui \
+    $$QT_DIR/forms/secondauthdialog.ui \
+    $$QT_DIR/forms/transactiondescdialog.ui
+
+# --- Resources ---
+RESOURCES += $$QT_DIR/bitcoin.qrc
+
+# --- Windows resource (icon, version info) ---
+RC_FILE = $$QT_DIR/res/bitcoin-qt.rc
+
+# --- Translations ---
+TRANSLATIONS += $$QT_DIR/locale/bitcoin_en.ts
+
+# --- Extra clean ---
+QMAKE_CLEAN += $$TARGET

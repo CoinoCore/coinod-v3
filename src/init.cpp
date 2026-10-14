@@ -326,6 +326,8 @@ std::string HelpMessage()
  *  @pre Parameters should be parsed and config file should be read.
  */
 
+
+
 bool AppInit2()
 {
     // *********************************************************
@@ -1005,7 +1007,6 @@ bool AppInit2()
         NewThread(ThreadRPCServer, NULL);
 
     // ********************************************************* Step 12: finished
-
     uiInterface.InitMessage(_("Done loading"));
     printf("Done loading\n");
 
@@ -1013,7 +1014,7 @@ bool AppInit2()
         return InitError(strErrors.str());
 
      // Add wallet transactions that aren't already in a block to mapTransactions
-    pwalletMain->ReacceptWalletTransactions();
+    // pwalletMain->ReacceptWalletTransactions();  // v3.0.4 hotfix: deadlock
 
 #if !defined(QT_GUI)
     // Loop until process is exit()ed from shutdown() function,

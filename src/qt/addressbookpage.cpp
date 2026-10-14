@@ -7,7 +7,6 @@
 #include "editaddressdialog.h"
 #include "csvmodelwriter.h"
 #include "guiutil.h"
-#include "qrcodedialog.h"
 
 #include <QSortFilterProxyModel>
 #include <QClipboard>
@@ -335,19 +334,9 @@ void AddressBookPage::exportClicked()
 
 void AddressBookPage::on_showQRCode_clicked()
 {
-    QTableView *table = ui->tableView;
-    QModelIndexList indexes = table->selectionModel()->selectedRows(AddressTableModel::Address);
-
-    foreach (QModelIndex index, indexes)
-    {
-        QString address = index.data().toString(), label = index.sibling(index.row(), 0).data(Qt::EditRole).toString();
-
-        QRCodeDialog *dialog = new QRCodeDialog(address, label, tab == ReceivingTab, this);
-        if(optionsModel)
-            dialog->setModel(optionsModel);
-        dialog->setAttribute(Qt::WA_DeleteOnClose);
-        dialog->show();
-    }
+    // v3.0.4: QRCodeDialog отключён — требует libqrencode (не собрана в MXE).
+    // Кнопка showQRCode скрыта в конструкторе (ui->showQRCode->setVisible(false)).
+    // TODO v3.0.5: вернуть после сборки qrencode в MXE.
 }
 
 void AddressBookPage::contextualMenu(const QPoint &point)
