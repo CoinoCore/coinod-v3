@@ -2,6 +2,11 @@
 
 Updated Coino CNO build for modern Linux systems (Ubuntu 24.04+).
 
+📥 Windows GUI Release
+
+Download the latest GUI wallet:  
+👉 [CoinoCore V3.0.4 — Windows GUI](https://github.com/CoinoCore/coinod-v3/releases/tag/v3.0.4)
+
 🇷🇺 [Русская версия](README.md)
 
 ## What's fixed
